@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title> FOURTH SEM R3QUIREMENT </title>
+	</head>
+	<body>
+		<p>
+			<!DOCTYPE html>
+			<html lang="en">
+				<head>
+					<meta charset="UTF-8">
+						<meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<title>FOURTH SEM CLINICS</title>
+							<style> 
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+        } 
+        h1, h2 { 
+            text-align: center; 
+        } 
+        .person { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            margin: 10px; 
+            cursor: pointer; 
+        } 
+.menu { 
+    position: absolute; 
+    top: 20px; 
+    right: 30px; 
+} 
+ 
+.menu-content { 
+    display: none; 
+    position: absolute; 
+    background-color: #f9f9f9; 
+    min-width: 160px; 
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2); 
+    z-index: 1; 
+    right: 0; /* Adjust the right position */ 
+    top: -10px; /* Adjust the top position */ 
+} 
+ 
+        .menu-content a { 
+            color: black; 
+            padding: 12px 16px; 
+            text-decoration: none; 
+            display: block; 
+        } 
+        .menu-content a:hover { 
+            background-color: #f1f1f1; 
+        } 
+    </style>
+						</head>
+						<body>
+							<div id="main-page">
+								<h1>FOURTH SEM CLINICS</h1>
+								<input type="text" id="search" oninput="filterPeople()" placeholder="Search for requirement">
+									<button onclick="addPersonPrompt()">Add Requirement</button>
+									<select id="sort" onchange="updatePeopleList()">
+										<option value="all" selected>All</option>
+										<option value="give">VIVA</option>
+										<option value="receive">REQUIREMENT</option>
+									</select>
+									<div id="people-list">
+										<!-- People will be dynamically added here -->
+									</div>
+								</div>
+								<div id="transaction-form" style="display: none;">
+									<button onclick="showMainPage()">←</button>
+									<div class="menu">
+										<span onclick="toggleMenu()">⋮</span>
+										<div id="menu-content" class="menu-content">
+											<a href="#" onclick="editPerson()">Edit</a>
+											<a href="#" onclick="deletePerson()">Delete</a>
+										</div>
+									</div>
+									<h2 id="selected-person"></h2>
+									<label for="amount">Type:</label>
+									<input type="number" id="amount" required>
+										<br>
+											<label for="type">Type:</label>
+											<select id="type">
+												<option value="give">VIVA</option>
+												<option value="receive">REQUIREMENT</option>
+											</select>
+											<br>
+												<label for="date">Date:</label>
+												<input type="date" id="date" required>
+													<br>
+														<label for="note">Note:</label>
+														<textarea id="note"></textarea>
+														<br>
+															<button onclick="saveTransaction()">Save </button>
+															<button onclick="showTransactionHistory()"> History</button>
+														</div>
+														<script> 
+    let people; 
+    let currentSort = 'all'; 
+ 
+    window.onload = function () { 
+        people = loadPeople(); 
+        updatePeopleList(); 
+    }; 
+ 
+    function loadPeople() { 
+        const storedPeople = localStorage.getItem('people'); 
+        return storedPeople ? JSON.parse(storedPeople) : {}; 
+    } 
+ 
+    function addPerson(name) { 
+        people[name] = { amount: 0, transactions: [] }; 
+        updatePeopleList(); 
+        saveData(); 
+    } 
+ 
+    function addPersonPrompt() { 
+        const personName = prompt('Enter the person\'s name:'); 
+        if (personName) { 
+            addPerson(personName); 
+        } 
+    } 
+ 
+    function updatePeopleList() { 
+        const peopleList = document.getElementById('people-list'); 
+        peopleList.innerHTML = ''; 
+        const searchTerm = document.getElementById('search').value.toLowerCase(); 
+        const sortOption = document.getElementById('sort').value; 
+ 
+        currentSort = sortOption; 
+ 
+        for (const person in people) { 
+            const personName = person.toLowerCase(); 
+            const totalAmount = people[person].amount; 
+ 
+            if ((sortOption === 'all' || (sortOption === 'give' && totalAmount < 0) || (sortOption === 'receive' && totalAmount > 0)) && personName.includes(searchTerm)) { 
+                const personElement = document.createElement('div'); 
+                personElement.classList.add('person'); 
+                personElement.textContent = `${person}: ${totalAmount}`; 
+                personElement.addEventListener('click', () => showTransactionForm(person)); 
+                personElement.addEventListener('contextmenu', (e) => showContextMenu(e, person)); 
+                peopleList.appendChild(personElement); 
+            } 
+        } 
+    } 
+ 
+    function showContextMenu(event, person) { 
+        event.preventDefault(); 
+        const menu = document.getElementById('menu-content'); 
+        menu.style.display = 'block'; 
+        menu.style.left = event.pageX + 'px'; 
+        menu.style.top = event.pageY + 'px'; 
+        document.getElementById('selected-person').textContent = person; 
+    } 
+ 
+    function toggleMenu() { 
+        const menu = document.getElementById('menu-content'); 
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block'; 
+    } 
+ 
+    function showTransactionForm(person) { 
+        document.getElementById('main-page').style.display = 'none'; 
+        document.getElementById('transaction-form').style.display = 'block'; 
+        document.getElementById('selected-person').textContent = person; 
+        clearTransactionForm(); 
+    } 
+ 
+    function saveTransaction() { 
+        const selectedPerson = document.getElementById('selected-person').textContent; 
+        const amount = parseFloat(document.getElementById('amount').value); 
+        const type = document.getElementById('type').value; 
+        const date = document.getElementById('date').value; 
+        const note = document.getElementById('note').value; 
+ 
+        if (type === 'give') { 
+            people[selectedPerson].amount -= amount; 
+        } else { 
+            people[selectedPerson].amount += amount; 
+        } 
+ 
+        const transaction = { amount, type, date, note }; 
+        people[selectedPerson].transactions.push(transaction); 
+ 
+        updatePeopleList(); 
+        clearTransactionForm(); 
+        saveData(); 
+    } 
+ 
+    function clearTransactionForm() { 
+        document.getElementById('amount').value = ''; 
+        document.getElementById('type').value = 'give'; 
+        document.getElementById('date').value = ''; 
+        document.getElementById('note').value = ''; 
+    } 
+ 
+    function showTransactionHistory() { 
+    const selectedPerson = document.getElementById('selected-person').textContent; 
+    const history = people[selectedPerson].transactions; 
+ 
+    if (history.length === 0) { 
+        alert('No transactions recorded.'); 
+        return; 
+    } 
+ 
+    let historyMessage = `Transaction History for ${selectedPerson}:\n\n`; 
+ 
+    history.forEach((transaction, index) => { 
+        historyMessage += `Transaction ${index + 1}:\n`; 
+        historyMessage += `Amount: ${transaction.amount}\n`; 
+        historyMessage += `Type: ${transaction.type}\n`; 
+        historyMessage += `Date: ${transaction.date}\n`; 
+        historyMessage += `Note: ${transaction.note}\n\n`; 
+    }); 
+ 
+    // Display the full transaction history in the alert 
+    const fullHistoryChoice = confirm(historyMessage + '\nDo you want to print or send to WhatsApp?'); 
+ 
+    if (!fullHistoryChoice) { 
+        // User canceled or clicked Cancel 
+        return; 
+    } 
+ 
+    // Prompt the user for date range 
+    const startDate = prompt('Enter the start date (YYYY-MM-DD):'); 
+    if (startDate === null) { 
+        // User canceled or clicked Cancel 
+        return; 
+    } 
+ 
+    const endDate = prompt('Enter the end date (YYYY-MM-DD):'); 
+    if (endDate === null) { 
+        // User canceled or clicked Cancel 
+        return; 
+    } 
+ 
+    // Filter transactions within the selected date range 
+    const filteredTransactions = history.filter(transaction => 
+        transaction.date >= startDate && transaction.date <= endDate 
+    ); 
+ 
+    // Generate a WhatsApp link for filtered transactions 
+    let filteredHistoryMessage = `Filtered Transaction History for ${selectedPerson}:\n\n`; 
+    filteredTransactions.forEach((transaction, index) => { 
+        filteredHistoryMessage += `Transaction ${index + 1}:\n`; 
+        filteredHistoryMessage += `Amount: ${transaction.amount}\n`; 
+        filteredHistoryMessage += `Type: ${transaction.type}\n`; 
+        filteredHistoryMessage += `Date: ${transaction.date}\n`; 
+        filteredHistoryMessage += `Note: ${transaction.note}\n\n`; 
+    }); 
+ 
+    // Display the filtered history 
+    alert(filteredHistoryMessage); 
+ 
+    // Prompt the user for the recipient's phone number 
+    const phoneNumber = prompt('Enter the recipient\'s phone number (include country code):'); 
+    if (phoneNumber === null) { 
+        // User canceled or clicked Cancel 
+        return; 
+    } 
+ 
+    // Generate a WhatsApp link for filtered transactions 
+    const message = encodeURIComponent(filteredHistoryMessage + `\nSelected Date Range: ${startDate} to ${endDate}`); 
+    const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`; 
+ 
+    // Open a new tab with the generated WhatsApp link 
+    window.open(whatsappLink, '_blank'); 
+} 
+ 
+ 
+    function showMainPage() { 
+        document.getElementById('transaction-form').style.display = 'none'; 
+        document.getElementById('main-page').style.display = 'block'; 
+        document.getElementById('search').value = ''; // Clear the search box when going back to the main page 
+        updatePeopleList(); // Update the people list to include all people 
+    } 
+ 
+    function saveData() { 
+        localStorage.setItem('people', JSON.stringify(people)); 
+    } 
+ 
+    function filterPeople() { 
+        updatePeopleList(); 
+    } 
+ 
+    function editPerson() { 
+        const selectedPerson = document.getElementById('selected-person').textContent; 
+ 
+        // Assuming you want to prompt for a new name for the person 
+        const newName = prompt('Enter the new name for ' + selectedPerson + ':'); 
+        if (newName) { 
+            people[newName] = people[selectedPerson]; 
+            delete people[selectedPerson]; 
+            document.getElementById('selected-person').textContent = newName; 
+            updatePeopleList(); 
+            saveData(); 
+        } 
+    } 
+ 
+    function deletePerson() { 
+        const selectedPerson = document.getElementById('selected-person').textContent; 
+        const confirmDelete = confirm('Are you sure you want to delete ' + selectedPerson + '?'); 
+ 
+        if (confirmDelete) { 
+            delete people[selectedPerson]; 
+            showMainPage(); 
+            updatePeopleList(); 
+            saveData(); 
+        } 
+    } 
+ 
+document.body.addEventListener('click', function(event) { 
+    const menu = document.getElementById('menu-content'); 
+    if (menu.style.display === 'block' && !event.target.closest('.menu')) { 
+        menu.style.display = 'none'; 
+    } 
+}); 
+ 
+
+														</script>
+													</body>
+												</html>
+											</p>
+										</body>
+									</html>
